@@ -33,6 +33,3 @@ Documentation
 - Unit tests do not cover alloc failures.
 - Only basic material properties are supported.
 - Only importing is supported.
-
-## Authors
-- Paige Xura
