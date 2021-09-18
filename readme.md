@@ -5,7 +5,7 @@ C library for interacting with Wavefront MTL files.
 Build
 ```
     gcc : https://gcc.gnu.org/install/
-  cutil : https://bitbucket.org/DragonDrop/cutil
+  cutil : https://github.com/bitnip/cutil
 ```
 Coverage Report
 ```
