@@ -24,6 +24,7 @@ struct WavefrontMaterial {
     int illuminationModel;
     struct WavefrontMap ambientMap;
     struct WavefrontMap diffuseMap;
+    struct WavefrontMap normalMap;
     struct WavefrontMap specularColorMap;
     struct WavefrontMap specularHighlightMap;
     struct WavefrontMap alphaMap;
@@ -38,7 +39,7 @@ struct WavefrontMTL {
 };
 
 void wavefrontMTLFree(struct WavefrontMTL* mtl);
-int wavefrontMTLAddMaterial(struct WavefrontMTL* mtl, char* name);
+int wavefrontMTLAddMaterial(struct WavefrontMTL* mtl, const char* name);
 
 #ifdef __cplusplus
 }

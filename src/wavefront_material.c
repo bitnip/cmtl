@@ -3,7 +3,7 @@
 
 int wavefrontMTLAddMaterial(
         struct WavefrontMTL* mtl,
-        char* name) {
+        const char* name) {
     // Reuse existing material with same name.
     for (unsigned int i = 0; i < mtl->materialCount; i++) {
         if (strcmp(name, mtl->materials[i].name) == 0) {
@@ -22,6 +22,7 @@ int wavefrontMTLAddMaterial(
     m->name = strCopy(name);
     m->ambientMap.file = NULL;
     m->diffuseMap.file = NULL;
+    m->normalMap.file = NULL;
     m->specularColorMap.file = NULL;
     m->specularHighlightMap.file = NULL;
     m->alphaMap.file = NULL;
@@ -33,10 +34,11 @@ int wavefrontMTLAddMaterial(
 
 void wavefrontMTLFree(struct WavefrontMTL* mtl) {
     for(unsigned int i = 0; i < mtl->materialCount; i++) {
-        struct WavefrontMaterial *m = mtl->materials + i;
+        struct WavefrontMaterial* m = mtl->materials + i;
         free(m->name);
         free(m->ambientMap.file);
         free(m->diffuseMap.file);
+        free(m->normalMap.file);
         free(m->specularColorMap.file);
         free(m->specularHighlightMap.file);
         free(m->alphaMap.file);

@@ -6,7 +6,7 @@ extern "C"{
 
 #include "wavefront_material.h"
 
-int parseWavefrontMTLFromString(struct WavefrontMTL *mtl, char *input);
+int parseWavefrontMTLFromString(struct WavefrontMTL *mtl, const char *input);
 
 #ifdef __cplusplus
 }

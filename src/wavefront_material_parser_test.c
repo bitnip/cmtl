@@ -310,7 +310,7 @@ void testParseBlenderWavefrontMaterial() {
                    "Ni 0.500000\n"
                    "d 0.200000\n"
                    "illum 2\n"
-           "map_Kd test.png\n";
+                   "map_Kd test.png\n";
     struct WavefrontMTL mtl;
     mtl.materials = NULL;
     mtl.materialCount = 0;
