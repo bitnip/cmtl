@@ -1,159 +1,136 @@
+#include <stdlib.h>
+#include "cutil/src/error.h"
 #include "cutil/src/string.h"
 #include "wavefront_material_parser.h"
 
-int wavefrontMaterialParseNewMaterial(struct WavefrontMTL* mtl, const char* line) {
-    line = strAfterWhitespace(line);
-    const char *thisToken = line, *nextDelim = NULL, *nextToken = NULL;
-    tokenize(&thisToken, &nextDelim, &nextToken, ASCII_H_DELIMITERS);
-    if (strStartsWith(thisToken, "newmtl") != nextDelim) return 0;
+static int parseNewMaterial(void* output, const char* line) {
+    struct WavefrontMTL* mtl = output;
+    if(!line) return STATUS_PARSE_ERR;
 
-    if (tokenize(&thisToken, &nextDelim, &nextToken, ASCII_H_DELIMITERS)) {
-        line = thisToken;
-        if(tokenize(&line, &nextDelim, &nextToken, ASCII_H_DELIMITERS)) return 0;
+    const char* thisToken = line,* nextDelim = NULL,* nextToken = NULL;
+    if (tokenize(&thisToken, &nextDelim, &nextToken, ASCII_H_DELIMITERS) &&
+        nextToken == NULL
+    ) {
+        char* temp = strCopyN(thisToken, nextDelim-thisToken);
+        if(temp == NULL) return STATUS_ALLOC_ERR;
 
-
-        char* line = strCopyN(thisToken, nextDelim-thisToken);
-        if(line == NULL) return 0;
-        wavefrontMTLAddMaterial(mtl, line);
-        free(line);
-        return 1;
+        int result = wavefrontMTLAddMaterial(mtl, temp);
+        if(result) {
+            free(temp);
+            return result;
+        }
     }
-    return 0;
+    return STATUS_OK;
 }
 
-static int parseColor(struct WavefrontColor* color, const char* line, const char* name) {
-    line = strAfterWhitespace(line);
-    const char *thisToken = line, *nextDelim = NULL, *nextToken = NULL;
-    tokenize(&thisToken, &nextDelim, &nextToken, ASCII_H_DELIMITERS);
-    if (strStartsWith(thisToken, name) != nextDelim) return 0; // Garbage after map_kd.
+static int parseColor(void* output, const char* input) {
+    struct WavefrontColor* color = output;
 
+    const char *thisToken = input, *nextDelim = NULL, *nextToken = NULL;
     // Parse Red.
     tokenize(&thisToken, &nextDelim, &nextToken, ASCII_H_DELIMITERS);
-    if(*thisToken==*nextDelim) return 0; // Red must be specified.
+    if(*thisToken==*nextDelim) return STATUS_PARSE_ERR; // Red must be specified.
     char* end = NULL;
     color->r = strtof(thisToken, &end);
     if(end != nextDelim)
-        return 0;
+        return STATUS_PARSE_ERR;
 
     color->a = 1.0;
 
     // Parse Green.
     if (!tokenize(&thisToken, &nextDelim, &nextToken, ASCII_H_DELIMITERS) ||
-        thisToken == nextDelim)
-    {
+        thisToken == nextDelim) {
         // Green and blue default to red if omitted.
         color->g = color->b = color->r;
-        return 1;
+        return STATUS_OK;
     }
     color->g = strtof(thisToken, &end);
     if(end != nextDelim)
-        return 0;
+        return STATUS_PARSE_ERR;
 
     // Parse Blue.
     if (!tokenize(&thisToken, &nextDelim, &nextToken, ASCII_H_DELIMITERS) ||
-        thisToken == nextDelim)
-    {
+        thisToken == nextDelim) {
         // Blue defaults to red if omitted.
         color->b = color->r;
-        return 1;
+        return STATUS_OK;
     }
     color->b = strtof(thisToken, &end);
     if(end != nextDelim)
-        return 0;
+        return STATUS_PARSE_ERR;
 
-    return !tokenize(&thisToken, &nextDelim, &nextToken, ASCII_H_DELIMITERS);
+    return nextToken == NULL ? STATUS_OK : STATUS_PARSE_ERR;
 }
 
-int wavefrontMaterialParseAmbientRGB(struct WavefrontColor* color, const char* line) {
-    return parseColor(color, line, "Ka");
+static int parseInteger(void* output, const char* input) {
+    *((int*)output) = atoi(input);
+    return STATUS_OK;
 }
 
-int wavefrontMaterialParseDiffuseRGB(struct WavefrontColor* color, const char* line) {
-    return parseColor(color, line, "Kd");
+static int parseFloat(void* output, const char* input) {
+    *((float*)output) = atof(input);
+    return STATUS_OK;
 }
 
-int wavefrontMaterialParseSpecularRGB(struct WavefrontColor* color, const char* line) {
-    return parseColor(color, line, "Ks");
-}
-
-int wavefrontMaterialParseTransmissionRGB(struct WavefrontColor* color, const char* line) {
-    return parseColor(color, line, "Tf");
-}
-
-int wavefrontMaterialParseComment(const char* line) {
-    return *line == '#';
-}
-
-int wavefrontMaterialParseIllumination(int* illuminationModel, const char* input) {
-    return sscanf(input, "illum %d", illuminationModel) == 1;
-}
-
-int wavefrontMaterialParseSpecularExponent(float* specularExponent, const char* input) {
-    return sscanf(input, "Ns %f", specularExponent) == 1;
-}
-
-int wavefrontMaterialParseDissolve(float* dissolve, const char* input) {
-    return sscanf(input, "d %f", dissolve) == 1;
-}
-
-int wavefrontMaterialParseOpticalDensity(float* opticalDensity, const char* input) {
-    return sscanf(input, "Ni %f", opticalDensity) == 1;
-}
-
-int wavefrontMaterialParseDiffuseMap(char** file, const char* line) {
-    line = strAfterWhitespace(line);
-    const char* thisToken = line,* nextDelim = NULL,* nextToken = NULL;
-    tokenize(&thisToken, &nextDelim, &nextToken, ASCII_H_DELIMITERS);
-    if (strStartsWith(thisToken, "map_Kd") != nextDelim) return 0; // Garbage after map_kd.
-    *file = strCopy(nextToken);
-    return 1;
-}
-
-int wavefrontMaterialParseNormalMap(char** file, const char* line) {
-    line = strAfterWhitespace(line);
-    const char* thisToken = line,* nextDelim = NULL,* nextToken = NULL;
-    tokenize(&thisToken, &nextDelim, &nextToken, ASCII_H_DELIMITERS);
-    if (strStartsWith(thisToken, "map_Kn") != nextDelim) return 0; // Garbage after map_kd.
-    *file = strCopy(nextToken);
-    return 1;
-}
-
-int wavefrontMTLParseLine(struct WavefrontMTL* mtl, const char* line) {
-    line = strAfterWhitespace(line);
-
-    struct WavefrontMaterial* m = NULL;
-    if (mtl->materialCount) {
-        m = mtl->materials + (mtl->materialCount-1);
-    }
-    return
-        !line ||
-        wavefrontMaterialParseComment(line) ||
-        wavefrontMaterialParseNewMaterial(mtl, line) ||
-        (m && (
-            wavefrontMaterialParseAmbientRGB(&m->ambient, line) ||
-            wavefrontMaterialParseDiffuseRGB(&m->diffuse, line) ||
-            wavefrontMaterialParseSpecularRGB(&m->specular, line) ||
-            wavefrontMaterialParseTransmissionRGB(&m->transmission, line) ||
-            wavefrontMaterialParseIllumination(&m->illuminationModel, line) ||
-            wavefrontMaterialParseSpecularExponent(&m->specularExponent, line) ||
-            wavefrontMaterialParseDissolve(&m->dissolve, line) ||
-            wavefrontMaterialParseOpticalDensity(&m->opticalDensity, line) ||
-            wavefrontMaterialParseDiffuseMap(&m->diffuseMap.file, line) ||
-            wavefrontMaterialParseNormalMap(&m->normalMap.file, line)
-        ));
+static int parseMap(void* output, const char* input) {
+    struct WavefrontMap* map = output;
+    map->file = strCopy(input);
+    return STATUS_OK;
 }
 
 int parseWavefrontMTLFromString(struct WavefrontMTL* mtl, const char* input) {
-    if(!input) return 0;
-    const char *thisToken = input, *nextDelim = NULL, *nextToken = NULL;
+    if(!input) return STATUS_INPUT_ERR;
+    mtl->materials = NULL;
+    mtl->materialCount = 0;
+
+    const char *thisToken = input,* nextDelim = NULL, *nextToken = NULL;
     while (tokenize(&thisToken, &nextDelim, &nextToken, ASCII_V_DELIMITERS)) {
         char* line = strCopyN(thisToken, nextDelim-thisToken);
-        if(line == NULL) return 0;
+        if(line == NULL) return STATUS_ALLOC_ERR;
 
-        wavefrontMTLParseLine(mtl, line);
+        const char* temp = strAfterWhitespace(line);
 
+        struct WavefrontMaterial* m = NULL;
+        if (mtl->materialCount) {
+            m = mtl->materials + (mtl->materialCount-1);
+        }
+
+        const char* thisToken = temp,* nextDelim = NULL,* nextToken = NULL;
+        tokenize(&thisToken, &nextDelim, &nextToken, ASCII_H_DELIMITERS);
+
+        struct Parser {
+            char name[8];
+            int (*fn)(void* color, const char* input);
+            void* result;
+        };
+        struct Parser parsers[] = {
+            {"newmtl", parseNewMaterial, (void*)mtl},
+            {"Ka", parseColor, (void*)&m->ambient},
+            {"Kd", parseColor, (void*)&m->diffuse},
+            {"Ks", parseColor, (void*)&m->specular},
+            {"Tf", parseColor, (void*)&m->transmission},
+            {"illum", parseInteger, (void*)&m->illuminationModel},
+            {"Ns", parseFloat, (void*)&m->specularExponent},
+            {"Ni", parseFloat, (void*)&m->opticalDensity},
+            {"d", parseFloat, (void*)&m->dissolve},
+            {"map_Kd", parseMap, (void*)&m->diffuseMap},
+            {"map_Kn", parseMap, (void*)&m->normalMap}
+        };
+        if(!nextToken) continue;
+        int result = STATUS_OK;
+        for(int i = 0; i < sizeof(parsers)/sizeof(struct Parser); i++) {
+            if((strStartsWith(thisToken, parsers[i].name) == nextDelim)) {
+                const char* temp = nextToken ? strAfterWhitespace(nextToken) : NULL;
+                result = parsers[i].fn ? parsers[i].fn(parsers[i].result, temp) : STATUS_OK;
+                break;
+            }
+        }
         free(line);
+        if(result) {
+            wavefrontMTLRelease(mtl);
+            return result;
+        }
     }
-    // TODO: return a meaningful result.
-    return 1;
+
+    return STATUS_OK;
 }

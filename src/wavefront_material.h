@@ -31,15 +31,22 @@ struct WavefrontMaterial {
     struct WavefrontMap bumpMap;
     struct WavefrontMap displacementMap;
     struct WavefrontMap decalMap;
+    struct WavefrontMap reflectionMapSphere;
+    struct WavefrontMap reflectionMapCubeTop;
+    struct WavefrontMap reflectionMapCubeBottom;
+    struct WavefrontMap reflectionMapCubeFront;
+    struct WavefrontMap reflectionMapCubeBack;
+    struct WavefrontMap reflectionMapCubeLeft;
+    struct WavefrontMap reflectionMapCubeRight;
 };
 
 struct WavefrontMTL {
-    struct WavefrontMaterial *materials;
+    struct WavefrontMaterial* materials;
     unsigned int materialCount;
 };
 
-void wavefrontMTLFree(struct WavefrontMTL* mtl);
-int wavefrontMTLAddMaterial(struct WavefrontMTL* mtl, const char* name);
+void wavefrontMTLRelease(struct WavefrontMTL* mtl);
+int wavefrontMTLAddMaterial(struct WavefrontMTL* mtl, char* name);
 
 #ifdef __cplusplus
 }

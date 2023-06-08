@@ -1,56 +1,43 @@
-#include <string.h>
 #include "wavefront_material_parser.h"
+#include "cutil/src/error.h"
 #include "cutil/src/assertion.h"
-
-int wavefrontMaterialParseNewMaterial(struct WavefrontMTL *mtls, char* line);
-int wavefrontMaterialParseAmbientRGB(struct WavefrontColor* color, char* line);
-int wavefrontMaterialParseDiffuseRGB(struct WavefrontColor* color, char* line);
-int wavefrontMaterialParseSpecularRGB(struct WavefrontColor* color, char* line);
-int wavefrontMaterialParseTransmissionRGB(struct WavefrontColor* color, char* line);
-int wavefrontMaterialParseComment(char* line);
-int wavefrontMaterialParseIllumination(int* illuminationModel, const char* line);
-int wavefrontMaterialParseSpecularExponent(float* specularExponent, const char* line);
 
 void testParseNewMaterial() {
     char input[] = "newmtl new_material";
     struct WavefrontMTL mtl;
-    mtl.materials = NULL;
-    mtl.materialCount = 0;
-    int result = wavefrontMaterialParseNewMaterial(&mtl, input);
-    assertTrue(result);
+    int result = parseWavefrontMTLFromString(&mtl, input);
+    assertIntegersEqual(result, STATUS_OK);
     assertIntegersEqual(mtl.materialCount, 1);
     assertStringsEqual(mtl.materials[0].name, "new_material");
-    wavefrontMTLFree(&mtl);
+    wavefrontMTLRelease(&mtl);
 }
 
 void testParseNewMaterialNoName() {
     char input[] = "newmtl";
     struct WavefrontMTL mtl;
-    mtl.materials = NULL;
-    mtl.materialCount = 0;
-    int result = wavefrontMaterialParseNewMaterial(&mtl, input);
-    assertFalse(result);
+    int result = parseWavefrontMTLFromString(&mtl, input);
+    assertIntegersEqual(result, STATUS_OK);
     assertIntegersEqual(mtl.materialCount, 0);
-    wavefrontMTLFree(&mtl);
+    wavefrontMTLRelease(&mtl);
 }
 
 void testParseNewMaterialGarbage() {
     char input[] = "newmtl new_material asdf";
     struct WavefrontMTL mtl;
-    mtl.materials = NULL;
-    mtl.materialCount = 0;
-    int result = wavefrontMaterialParseNewMaterial(&mtl, input);
-    assertFalse(result);
-    assertIntegersEqual(mtl.materialCount, 0);
-    wavefrontMTLFree(&mtl);
+    int result = parseWavefrontMTLFromString(&mtl, input);
+    assertIntegersEqual(result, STATUS_OK);
+    assertIntegersEqual(mtl.materialCount, 0);  
+    wavefrontMTLRelease(&mtl);
 }
 
 void testParseAmbientRGB() {
-    struct WavefrontColor color;
-    char input[] = "Ka 0.1 0.5 0.7";
-    int result;
-    result = wavefrontMaterialParseAmbientRGB(&color, input);
-    assertTrue(result);
+    char input[] = "newmtl new_material\n"
+                   "Ka 0.1 0.5 0.7";
+    struct WavefrontMTL mtl;
+    int result = parseWavefrontMTLFromString(&mtl, input);
+    assertIntegersEqual(result, STATUS_OK);
+    assertIntegersEqual(mtl.materialCount, 1);
+    struct WavefrontColor color = mtl.materials[0].ambient;
     assertFloatsEqual(color.r, 0.1);
     assertFloatsEqual(color.g, 0.5);
     assertFloatsEqual(color.b, 0.7);
@@ -58,11 +45,13 @@ void testParseAmbientRGB() {
 }
 
 void testParseAmbientRGBOnlyR() {
-    struct WavefrontColor color;
-    char input[] = "Ka 0.1";
-    int result;
-    result = wavefrontMaterialParseAmbientRGB(&color, input);
-    assertTrue(result);
+    char input[] = "newmtl new_material\n"
+                   "Ka 0.1";
+    struct WavefrontMTL mtl;
+    int result = parseWavefrontMTLFromString(&mtl, input);
+    assertIntegersEqual(result, STATUS_OK);
+    assertIntegersEqual(mtl.materialCount, 1);
+    struct WavefrontColor color = mtl.materials[0].ambient;
     assertFloatsEqual(color.r, 0.1);
     assertFloatsEqual(color.g, 0.1);
     assertFloatsEqual(color.b, 0.1);
@@ -70,11 +59,13 @@ void testParseAmbientRGBOnlyR() {
 }
 
 void testParseAmbientRGBOnlyREmptyG() {
-    struct WavefrontColor color;
-    char input[] = "Ka 0.1 ";
-    int result;
-    result = wavefrontMaterialParseAmbientRGB(&color, input);
-    assertTrue(result);
+    char input[] = "newmtl new_material\n"
+                   "Ka 0.1 ";
+    struct WavefrontMTL mtl;
+    int result = parseWavefrontMTLFromString(&mtl, input);
+    assertIntegersEqual(result, STATUS_OK);
+    assertIntegersEqual(mtl.materialCount, 1);
+    struct WavefrontColor color = mtl.materials[0].ambient;
     assertFloatsEqual(color.r, 0.1);
     assertFloatsEqual(color.g, 0.1);
     assertFloatsEqual(color.b, 0.1);
@@ -82,11 +73,13 @@ void testParseAmbientRGBOnlyREmptyG() {
 }
 
 void testParseAmbientRGBOnlyRG() {
-    struct WavefrontColor color;
-    char input[] = "Ka 0.1 0.5";
-    int result;
-    result = wavefrontMaterialParseAmbientRGB(&color, input);
-    assertTrue(result);
+    char input[] = "newmtl new_material\n"
+                   "Ka 0.1 0.5";
+    struct WavefrontMTL mtl;
+    int result = parseWavefrontMTLFromString(&mtl, input);
+    assertIntegersEqual(result, STATUS_OK);
+    assertIntegersEqual(mtl.materialCount, 1);
+    struct WavefrontColor color = mtl.materials[0].ambient;
     assertFloatsEqual(color.r, 0.1);
     assertFloatsEqual(color.g, 0.5);
     assertFloatsEqual(color.b, 0.1);
@@ -94,11 +87,13 @@ void testParseAmbientRGBOnlyRG() {
 }
 
 void testParseAmbientRGBOnlyRGEmptyB() {
-    struct WavefrontColor color;
-    char input[] = "Ka 0.1 0.5 ";
-    int result;
-    result = wavefrontMaterialParseAmbientRGB(&color, input);
-    assertTrue(result);
+    char input[] = "newmtl new_material\n"
+                   "Ka 0.1 0.5 ";
+    struct WavefrontMTL mtl;
+    int result = parseWavefrontMTLFromString(&mtl, input);
+    assertIntegersEqual(result, STATUS_OK);
+    assertIntegersEqual(mtl.materialCount, 1);
+    struct WavefrontColor color = mtl.materials[0].ambient;
     assertFloatsEqual(color.r, 0.1);
     assertFloatsEqual(color.g, 0.5);
     assertFloatsEqual(color.b, 0.1);
@@ -106,19 +101,21 @@ void testParseAmbientRGBOnlyRGEmptyB() {
 }
 
 void testParseAmbientRGBGarbage() {
-    struct WavefrontColor color;
-    char input[] = "Ka 0.1 0.5 0.7 asdf";
-    int result;
-    result = wavefrontMaterialParseAmbientRGB(&color, input);
-    assertFalse(result);
+    char input[] = "newmtl new_material\n"
+                   "Ka 0.1 0.5 0.7 asdf";
+    struct WavefrontMTL mtl;
+    int result = parseWavefrontMTLFromString(&mtl, input);
+    assertIntegersEqual(result, STATUS_PARSE_ERR);
 }
 
 void testParseDiffuseRGB() {
-    struct WavefrontColor color;
-    char input[] = "Kd 0.1 0.5 0.7";
-    int result;
-    result = wavefrontMaterialParseDiffuseRGB(&color, input);
-    assertTrue(result);
+    char input[] = "newmtl new_material\n"
+                   "Kd 0.1 0.5 0.7";
+    struct WavefrontMTL mtl;
+    int result = parseWavefrontMTLFromString(&mtl, input);
+    assertIntegersEqual(result, STATUS_OK);
+    assertIntegersEqual(mtl.materialCount, 1);
+    struct WavefrontColor color = mtl.materials[0].diffuse;
     assertFloatsEqual(color.r, 0.1);
     assertFloatsEqual(color.g, 0.5);
     assertFloatsEqual(color.b, 0.7);
@@ -126,11 +123,13 @@ void testParseDiffuseRGB() {
 }
 
 void testParseDiffuseRGBOnlyR() {
-    struct WavefrontColor color;
-    char input[] = "Kd 0.1";
-    int result;
-    result = wavefrontMaterialParseDiffuseRGB(&color, input);
-    assertTrue(result);
+    char input[] = "newmtl new_material\n"
+                   "Kd 0.1";
+    struct WavefrontMTL mtl;
+    int result = parseWavefrontMTLFromString(&mtl, input);
+    assertIntegersEqual(result, STATUS_OK);
+    assertIntegersEqual(mtl.materialCount, 1);
+    struct WavefrontColor color = mtl.materials[0].diffuse;
     assertFloatsEqual(color.r, 0.1);
     assertFloatsEqual(color.g, 0.1);
     assertFloatsEqual(color.b, 0.1);
@@ -138,11 +137,13 @@ void testParseDiffuseRGBOnlyR() {
 }
 
 void testParseDiffuseRGBOnlyRG() {
-    struct WavefrontColor color;
-    char input[] = "Kd 0.1 0.5";
-    int result;
-    result = wavefrontMaterialParseDiffuseRGB(&color, input);
-    assertTrue(result);
+    char input[] = "newmtl new_material\n"
+                   "Kd 0.1 0.5";
+    struct WavefrontMTL mtl;
+    int result = parseWavefrontMTLFromString(&mtl, input);
+    assertIntegersEqual(result, STATUS_OK);
+    assertIntegersEqual(mtl.materialCount, 1);
+    struct WavefrontColor color = mtl.materials[0].diffuse;
     assertFloatsEqual(color.r, 0.1);
     assertFloatsEqual(color.g, 0.5);
     assertFloatsEqual(color.b, 0.1);
@@ -150,19 +151,21 @@ void testParseDiffuseRGBOnlyRG() {
 }
 
 void testParseDiffuseRGBGarbage() {
-    struct WavefrontColor color;
-    char input[] = "Kd 0.1 0.5 0.7 asdf";
-    int result;
-    result = wavefrontMaterialParseDiffuseRGB(&color, input);
-    assertFalse(result);
+    char input[] = "newmtl new_material\n"
+                   "Kd 0.1 0.5 0.7 asdf";
+    struct WavefrontMTL mtl;
+    int result = parseWavefrontMTLFromString(&mtl, input);
+    assertIntegersEqual(result, STATUS_PARSE_ERR);
 }
 
 void testParseSpecularRGB() {
-    struct WavefrontColor color;
-    char input[] = "Ks 0.1 0.5 0.7";
-    int result;
-    result = wavefrontMaterialParseSpecularRGB(&color, input);
-    assertTrue(result);
+    char input[] = "newmtl new_material\n"
+                   "Ks 0.1 0.5 0.7";
+    struct WavefrontMTL mtl;
+    int result = parseWavefrontMTLFromString(&mtl, input);
+    assertIntegersEqual(result, STATUS_OK);
+    assertIntegersEqual(mtl.materialCount, 1);
+    struct WavefrontColor color = mtl.materials[0].specular;
     assertFloatsEqual(color.r, 0.1);
     assertFloatsEqual(color.g, 0.5);
     assertFloatsEqual(color.b, 0.7);
@@ -170,11 +173,13 @@ void testParseSpecularRGB() {
 }
 
 void testParseSpecularRGBOnlyR() {
-    struct WavefrontColor color;
-    char input[] = "Ks 0.1";
-    int result;
-    result = wavefrontMaterialParseSpecularRGB(&color, input);
-    assertTrue(result);
+    char input[] = "newmtl new_material\n"
+                   "Ks 0.1";
+    struct WavefrontMTL mtl;
+    int result = parseWavefrontMTLFromString(&mtl, input);
+    assertIntegersEqual(result, STATUS_OK);
+    assertIntegersEqual(mtl.materialCount, 1);
+    struct WavefrontColor color = mtl.materials[0].specular;
     assertFloatsEqual(color.r, 0.1);
     assertFloatsEqual(color.g, 0.1);
     assertFloatsEqual(color.b, 0.1);
@@ -182,11 +187,13 @@ void testParseSpecularRGBOnlyR() {
 }
 
 void testParseSpecularRGBOnlyRG() {
-    struct WavefrontColor color;
-    char input[] = "Ks 0.1 0.5";
-    int result;
-    result = wavefrontMaterialParseSpecularRGB(&color, input);
-    assertTrue(result);
+    char input[] = "newmtl new_material\n"
+                   "Ks 0.1 0.5";
+    struct WavefrontMTL mtl;
+    int result = parseWavefrontMTLFromString(&mtl, input);
+    assertIntegersEqual(result, STATUS_OK);
+    assertIntegersEqual(mtl.materialCount, 1);
+    struct WavefrontColor color = mtl.materials[0].specular;
     assertFloatsEqual(color.r, 0.1);
     assertFloatsEqual(color.g, 0.5);
     assertFloatsEqual(color.b, 0.1);
@@ -194,20 +201,22 @@ void testParseSpecularRGBOnlyRG() {
 }
 
 void testParseSpecularRGBGarbage() {
-    struct WavefrontColor color;
-    char input[] = "Ks 0.1 0.5 0.7 asdf";
-    int result;
-    result = wavefrontMaterialParseSpecularRGB(&color, input);
-    assertFalse(result);
+    char input[] = "newmtl new_material\n"
+                   "Ks 0.1 0.5 0.7 asdf";
+    struct WavefrontMTL mtl;
+    int result = parseWavefrontMTLFromString(&mtl, input);
+    assertIntegersEqual(result, STATUS_PARSE_ERR);
 }
 
 
 void testParseTransmissionRGB() {
-    struct WavefrontColor color;
-    char input[] = "Tf 0.1 0.5 0.7";
-    int result;
-    result = wavefrontMaterialParseTransmissionRGB(&color, input);
-    assertTrue(result);
+    char input[] = "newmtl new_material\n"
+                   "Tf 0.1 0.5 0.7";
+    struct WavefrontMTL mtl;
+    int result = parseWavefrontMTLFromString(&mtl, input);
+    assertIntegersEqual(result, STATUS_OK);
+    assertIntegersEqual(mtl.materialCount, 1);
+    struct WavefrontColor color = mtl.materials[0].transmission;
     assertFloatsEqual(color.r, 0.1);
     assertFloatsEqual(color.g, 0.5);
     assertFloatsEqual(color.b, 0.7);
@@ -215,11 +224,13 @@ void testParseTransmissionRGB() {
 }
 
 void testParseTransmissionRGBOnlyR() {
-    struct WavefrontColor color;
-    char input[] = "Tf 0.1";
-    int result;
-    result = wavefrontMaterialParseTransmissionRGB(&color, input);
-    assertTrue(result);
+    char input[] = "newmtl new_material\n"
+                   "Tf 0.1";
+    struct WavefrontMTL mtl;
+    int result = parseWavefrontMTLFromString(&mtl, input);
+    assertIntegersEqual(result, STATUS_OK);
+    assertIntegersEqual(mtl.materialCount, 1);
+    struct WavefrontColor color = mtl.materials[0].transmission;
     assertFloatsEqual(color.r, 0.1);
     assertFloatsEqual(color.g, 0.1);
     assertFloatsEqual(color.b, 0.1);
@@ -227,11 +238,13 @@ void testParseTransmissionRGBOnlyR() {
 }
 
 void testParseTransmissionRGBOnlyRG() {
-    struct WavefrontColor color;
-    char input[] = "Tf 0.1 0.5";
-    int result;
-    result = wavefrontMaterialParseTransmissionRGB(&color, input);
-    assertTrue(result);
+    char input[] = "newmtl new_material\n"
+                   "Tf 0.1 0.5";
+    struct WavefrontMTL mtl;
+    int result = parseWavefrontMTLFromString(&mtl, input);
+    assertIntegersEqual(result, STATUS_OK);
+    assertIntegersEqual(mtl.materialCount, 1);
+    struct WavefrontColor color = mtl.materials[0].transmission;
     assertFloatsEqual(color.r, 0.1);
     assertFloatsEqual(color.g, 0.5);
     assertFloatsEqual(color.b, 0.1);
@@ -239,62 +252,83 @@ void testParseTransmissionRGBOnlyRG() {
 }
 
 void testParseTransmissionRGBGarbage() {
-    struct WavefrontColor color;
-    char input[] = "Tf 0.1 0.5 0.7 asdf";
-    int result;
-    result = wavefrontMaterialParseTransmissionRGB(&color, input);
-    assertFalse(result);
+    char input[] = "newmtl new_material\n"
+                   "Tf 0.1 0.5 0.7 asdf";
+    struct WavefrontMTL mtl;
+    int result = parseWavefrontMTLFromString(&mtl, input);
+    assertIntegersEqual(result, STATUS_PARSE_ERR);
 }
 
 void testParseComment() {
     char input[] = "# A comment.";
-    int result = wavefrontMaterialParseComment(input);
-    assertTrue(result);
+    struct WavefrontMTL mtl;
+    int result = parseWavefrontMTLFromString(&mtl, input);
+    assertIntegersEqual(result, STATUS_OK);
 }
 
 void testParseIllumination() {
-    char input[] = "illum 5";
-    int result, illuminationModel;
-    result = wavefrontMaterialParseIllumination(&illuminationModel, input);
-    assertTrue(result);
+    char input[] = "newmtl new_material\n"
+                   "illum 5";
+    struct WavefrontMTL mtl;
+    int result = parseWavefrontMTLFromString(&mtl, input);
+    assertIntegersEqual(result, STATUS_OK);
+    assertIntegersEqual(mtl.materialCount, 1);
+    int illuminationModel = mtl.materials[0].illuminationModel;
     assertIntegersEqual(illuminationModel, 5);
 }
 
 void testParseIlluminationMissingNumber() {
-    char input[] = "illum";
-    int result, illuminationModel;
-    result = wavefrontMaterialParseIllumination(&illuminationModel, input);
-    assertFalse(result);
+    char input[] = "newmtl new_material\n"
+                   "illum";
+    struct WavefrontMTL mtl;
+    int result = parseWavefrontMTLFromString(&mtl, input);
+    assertIntegersEqual(result, STATUS_OK);
+    assertIntegersEqual(mtl.materialCount, 1);
+    int illuminationModel = mtl.materials[0].illuminationModel;
+    assertIntegersEqual(illuminationModel, 0);
 }
 
 void testParseIlluminationEmptyNumber() {
-    char input[] = "illum ";
-    int result, illuminationModel;
-    result = wavefrontMaterialParseIllumination(&illuminationModel, input);
-    assertFalse(result);
+    char input[] = "newmtl new_material\n"
+                   "illum ";
+    struct WavefrontMTL mtl;
+    int result = parseWavefrontMTLFromString(&mtl, input);
+    assertIntegersEqual(result, STATUS_OK);
+    assertIntegersEqual(mtl.materialCount, 1);
+    int illuminationModel = mtl.materials[0].illuminationModel;
+    assertIntegersEqual(illuminationModel, 0);
 }
 
 void testParseIlluminationInvalidNumber() {
-    char input[] = "illum asdf";
-    int result, illuminationModel;
-    result = wavefrontMaterialParseIllumination(&illuminationModel, input);
-    assertFalse(result);
+    char input[] = "newmtl new_material\n"
+                   "illum asdf";
+    struct WavefrontMTL mtl;
+    int result = parseWavefrontMTLFromString(&mtl, input);
+    assertIntegersEqual(result, STATUS_OK);
+    assertIntegersEqual(mtl.materialCount, 1);
+    int illuminationModel = mtl.materials[0].illuminationModel;
+    assertIntegersEqual(illuminationModel, 0);
 }
 
 void testParseIlluminationIgnoresGarbage() {
-    char input[] = "illum 10 asdf";
-    int result, illuminationModel;
-    result = wavefrontMaterialParseIllumination(&illuminationModel, input);
-    assertTrue(result);
+    char input[] = "newmtl new_material\n"
+                   "illum 10 asdf";
+    struct WavefrontMTL mtl;
+    int result = parseWavefrontMTLFromString(&mtl, input);
+    assertIntegersEqual(result, STATUS_OK);
+    assertIntegersEqual(mtl.materialCount, 1);
+    int illuminationModel = mtl.materials[0].illuminationModel;
     assertIntegersEqual(illuminationModel, 10);
 }
 
 void testParseSpecularExponent() {
-    char input[] = "Ns 0.5";
-    int result;
-    float specularExponent;
-    result = wavefrontMaterialParseSpecularExponent(&specularExponent, input);
-    assertTrue(result);
+    char input[] = "newmtl new_material\n"
+                   "Ns 0.5";
+    struct WavefrontMTL mtl;
+    int result = parseWavefrontMTLFromString(&mtl, input);
+    assertIntegersEqual(result, STATUS_OK);
+    assertIntegersEqual(mtl.materialCount, 1);
+    float specularExponent = mtl.materials[0].specularExponent;
     assertFloatsEqual(specularExponent, 0.5);
 }
 
@@ -315,7 +349,7 @@ void testParseBlenderWavefrontMaterial() {
     mtl.materials = NULL;
     mtl.materialCount = 0;
     int result = parseWavefrontMTLFromString(&mtl, input);
-    assertTrue(result);
+    assertIntegersEqual(result, STATUS_OK);
     struct WavefrontMaterial* m = mtl.materials;
     assertStringsEqual(m->name, "Material_001.001");
     assertFloatsEqual(m->specularExponent, 3.92);
@@ -331,7 +365,7 @@ void testParseBlenderWavefrontMaterial() {
     assertFloatsEqual(m->opticalDensity, 0.5);
     assertIntegersEqual(m->illuminationModel, 2);
     assertStringsEqual(m->diffuseMap.file, "test.png");
-    wavefrontMTLFree(&mtl);
+    wavefrontMTLRelease(&mtl);
 }
 
 void testParseGuruWavefrontMaterial() {
@@ -350,7 +384,7 @@ void testParseGuruWavefrontMaterial() {
     mtl.materials = NULL;
     mtl.materialCount = 0;
     int result = parseWavefrontMTLFromString(&mtl, input);
-    assertTrue(result);
+    assertIntegersEqual(result, STATUS_OK);
     struct WavefrontMaterial* m = mtl.materials;
     assertStringsEqual(m->name, "Material_Test");
     assertFloatsEqual(m->specularExponent, 32.0);
@@ -364,7 +398,7 @@ void testParseGuruWavefrontMaterial() {
     assertFloatsEqual(m->specular.g, 0.8);
     assertFloatsEqual(m->specular.b, 0.9);
     assertIntegersEqual(m->illuminationModel, 2);
-    wavefrontMTLFree(&mtl);
+    wavefrontMTLRelease(&mtl);
 }
 
 void wavefrontMaterialParserTest() {
