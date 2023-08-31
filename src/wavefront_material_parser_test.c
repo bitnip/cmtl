@@ -362,6 +362,7 @@ void testParseBlenderWavefrontMaterial() {
     assertFloatsEqual(m->specular.r, 0.7);
     assertFloatsEqual(m->specular.g, 0.8);
     assertFloatsEqual(m->specular.b, 0.9);
+    assertFloatsEqual(m->dissolve, 0.2);
     assertFloatsEqual(m->opticalDensity, 0.5);
     assertIntegersEqual(m->illuminationModel, 2);
     assertStringsEqual(m->diffuseMap.file, "test.png");
