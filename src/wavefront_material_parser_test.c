@@ -339,7 +339,7 @@ void testParseReflectionMapSphere() {
     int result = parseWavefrontMTLFromString(&mtl, input);
     assertIntegersEqual(result, STATUS_OK);
     assertIntegersEqual(mtl.materialCount, 1);
-    char* reflectionMapSphere = mtl.materials[0].reflectionMapSphere.file;
+    char *reflectionMapSphere = mtl.materials[0].reflectionMapSphere.file;
     assertStringsEqual(reflectionMapSphere, "sphere.png");
 }
 
@@ -382,7 +382,7 @@ void testParseBlenderWavefrontMaterial() {
     mtl.materialCount = 0;
     int result = parseWavefrontMTLFromString(&mtl, input);
     assertIntegersEqual(result, STATUS_OK);
-    struct WavefrontMaterial* m = mtl.materials;
+    struct WavefrontMaterial *m = mtl.materials;
     assertStringsEqual(m->name, "Material_001.001");
     assertFloatsEqual(m->specularExponent, 3.92);
     assertFloatsEqual(m->ambient.r, 0.1);
@@ -418,7 +418,7 @@ void testParseGuruWavefrontMaterial() {
     mtl.materialCount = 0;
     int result = parseWavefrontMTLFromString(&mtl, input);
     assertIntegersEqual(result, STATUS_OK);
-    struct WavefrontMaterial* m = mtl.materials;
+    struct WavefrontMaterial *m = mtl.materials;
     assertStringsEqual(m->name, "Material_Test");
     assertFloatsEqual(m->specularExponent, 32.0);
     assertFloatsEqual(m->ambient.r, 0.1);

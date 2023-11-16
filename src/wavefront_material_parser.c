@@ -3,15 +3,15 @@
 #include "cutil/src/string.h"
 #include "wavefront_material_parser.h"
 
-static int parseNewMaterial(void* output, const char* line) {
-    struct WavefrontMTL* mtl = output;
+static int parseNewMaterial(void *output, const char *line) {
+    struct WavefrontMTL *mtl = output;
     if(!line) return STATUS_PARSE_ERR;
 
-    const char* thisToken = line,* nextDelim = NULL,* nextToken = NULL;
+    const char *thisToken = line, *nextDelim = NULL, *nextToken = NULL;
     if (tokenize(&thisToken, &nextDelim, &nextToken, ASCII_H_DELIMITERS) &&
         nextToken == NULL
     ) {
-        char* temp = strCopyN(thisToken, nextDelim-thisToken);
+        char *temp = strCopyN(thisToken, nextDelim-thisToken);
         if(temp == NULL) return STATUS_ALLOC_ERR;
 
         int result = wavefrontMTLAddMaterial(mtl, temp);
@@ -23,14 +23,14 @@ static int parseNewMaterial(void* output, const char* line) {
     return STATUS_OK;
 }
 
-static int parseColor(void* output, const char* input) {
-    struct WavefrontColor* color = output;
+static int parseColor(void *output, const char *input) {
+    struct WavefrontColor *color = output;
 
     const char *thisToken = input, *nextDelim = NULL, *nextToken = NULL;
     // Parse Red.
     tokenize(&thisToken, &nextDelim, &nextToken, ASCII_H_DELIMITERS);
     if(*thisToken==*nextDelim) return STATUS_PARSE_ERR; // Red must be specified.
-    char* end = NULL;
+    char *end = NULL;
     color->r = strtof(thisToken, &end);
     if(end != nextDelim)
         return STATUS_PARSE_ERR;
@@ -62,20 +62,20 @@ static int parseColor(void* output, const char* input) {
     return nextToken == NULL ? STATUS_OK : STATUS_PARSE_ERR;
 }
 
-static int parseInteger(void* output, const char* input) {
+static int parseInteger(void *output, const char *input) {
     *((int*)output) = atoi(input);
     return STATUS_OK;
 }
 
-static int parseFloat(void* output, const char* input) {
+static int parseFloat(void *output, const char *input) {
     *((float*)output) = atof(input);
     return STATUS_OK;
 }
 
-static int parseMap(void* output, const char* input) {
-    struct WavefrontMap* map = output;
+static int parseMap(void *output, const char *input) {
+    struct WavefrontMap *map = output;
 
-    const char *thisToken = input,* nextDelim = NULL, *nextToken = NULL;
+    const char *thisToken = input, *nextDelim = NULL, *nextToken = NULL;
     while (tokenize(&thisToken, &nextDelim, &nextToken, ASCII_H_DELIMITERS)) {
         if(strStartsWith(thisToken, "-")) {
             tokenize(&thisToken, &nextDelim, &nextToken, ASCII_H_DELIMITERS);
@@ -88,30 +88,30 @@ static int parseMap(void* output, const char* input) {
     return STATUS_OK;
 }
 
-int parseWavefrontMTLFromString(struct WavefrontMTL* mtl, const char* input) {
+int parseWavefrontMTLFromString(struct WavefrontMTL *mtl, const char *input) {
     if(!input) return STATUS_INPUT_ERR;
     mtl->materials = NULL;
     mtl->materialCount = 0;
 
-    const char *thisToken = input,* nextDelim = NULL, *nextToken = NULL;
+    const char *thisToken = input, *nextDelim = NULL, *nextToken = NULL;
     while (tokenize(&thisToken, &nextDelim, &nextToken, ASCII_V_DELIMITERS)) {
-        char* line = strCopyN(thisToken, nextDelim-thisToken);
+        char *line = strCopyN(thisToken, nextDelim-thisToken);
         if(line == NULL) return STATUS_ALLOC_ERR;
 
-        const char* temp = strAfterWhitespace(line);
+        const char *temp = strAfterWhitespace(line);
 
         struct WavefrontMaterial* m = NULL;
         if (mtl->materialCount) {
             m = mtl->materials + (mtl->materialCount-1);
         }
 
-        const char* thisToken = temp,* nextDelim = NULL,* nextToken = NULL;
+        const char *thisToken = temp,* nextDelim = NULL,* nextToken = NULL;
         tokenize(&thisToken, &nextDelim, &nextToken, ASCII_H_DELIMITERS);
 
         struct Parser {
             char name[22];
-            int (*fn)(void* color, const char* input);
-            void* result;
+            int (*fn)(void *color, const char *input);
+            void *result;
         };
         struct Parser parsers[] = {
             {"newmtl", parseNewMaterial, (void*)mtl},
@@ -137,7 +137,7 @@ int parseWavefrontMTLFromString(struct WavefrontMTL* mtl, const char* input) {
         int result = STATUS_OK;
         for(int i = 0; i < sizeof(parsers)/sizeof(struct Parser); i++) {
             if((strStartsWith(thisToken, parsers[i].name) >= nextDelim)) {
-                const char* temp = nextToken ? strAfterWhitespace(nextToken) : NULL;
+                const char *temp = nextToken ? strAfterWhitespace(nextToken) : NULL;
                 result = parsers[i].fn ? parsers[i].fn(parsers[i].result, temp) : STATUS_OK;
                 break;
             }

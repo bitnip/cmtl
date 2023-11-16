@@ -9,12 +9,12 @@ struct WavefrontColor {
 };
 
 struct WavefrontMap {
-    char* file;
-    char* options;
+    char *file;
+    char *options;
 };
 
 struct WavefrontMaterial {
-    char* name;
+    char *name;
     struct WavefrontColor ambient;
     struct WavefrontColor diffuse;
     struct WavefrontColor specular;
@@ -42,12 +42,12 @@ struct WavefrontMaterial {
 };
 
 struct WavefrontMTL {
-    struct WavefrontMaterial* materials;
+    struct WavefrontMaterial *materials;
     unsigned int materialCount;
 };
 
-void wavefrontMTLRelease(struct WavefrontMTL* mtl);
-int wavefrontMTLAddMaterial(struct WavefrontMTL* mtl, char* name);
+void wavefrontMTLRelease(struct WavefrontMTL *mtl);
+int wavefrontMTLAddMaterial(struct WavefrontMTL *mtl, char *name);
 
 #ifdef __cplusplus
 }
