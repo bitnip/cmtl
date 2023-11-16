@@ -3,7 +3,7 @@
 #include "cutil/src/string.h"
 #include "wavefront_material.h"
 
-int wavefrontMaterialCompose(struct WavefrontMaterial* mtl) {
+int wavefrontMtlCompose(struct WavefrontMaterial* mtl) {
     memset(mtl, 0, sizeof(struct WavefrontMaterial));
     // NOTE: Does defaulting alpha to 1 seem more sane? 
     return STATUS_OK;
@@ -24,7 +24,7 @@ int wavefrontMTLAddMaterial(struct WavefrontMTL* mtl, char* name) {
     if(temp) {
         mtl->materials = temp;
         struct WavefrontMaterial* m = mtl->materialCount++ + mtl->materials;
-        result = wavefrontMaterialCompose(m);
+        result = wavefrontMtlCompose(m);
         m->name = name;
     }
     return result;
@@ -43,6 +43,14 @@ void wavefrontMTLRelease(struct WavefrontMTL* mtl) {
         free(m->bumpMap.file);
         free(m->displacementMap.file);
         free(m->decalMap.file);
+
+        free(m->reflectionMapSphere.file);
+        free(m->reflectionMapCubeTop.file);
+        free(m->reflectionMapCubeBottom.file);
+        free(m->reflectionMapCubeFront.file);
+        free(m->reflectionMapCubeBack.file);
+        free(m->reflectionMapCubeLeft.file);
+        free(m->reflectionMapCubeRight.file);
     }
     free(mtl->materials);
 }

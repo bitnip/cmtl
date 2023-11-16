@@ -10,6 +10,7 @@ struct WavefrontColor {
 
 struct WavefrontMap {
     char* file;
+    char* options;
 };
 
 struct WavefrontMaterial {

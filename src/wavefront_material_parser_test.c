@@ -332,6 +332,38 @@ void testParseSpecularExponent() {
     assertFloatsEqual(specularExponent, 0.5);
 }
 
+void testParseReflectionMapSphere() {
+    char input[] = "newmtl new_material\n"
+                   "refl -type sphere sphere.png";
+    struct WavefrontMTL mtl;
+    int result = parseWavefrontMTLFromString(&mtl, input);
+    assertIntegersEqual(result, STATUS_OK);
+    assertIntegersEqual(mtl.materialCount, 1);
+    char* reflectionMapSphere = mtl.materials[0].reflectionMapSphere.file;
+    assertStringsEqual(reflectionMapSphere, "sphere.png");
+}
+
+void testParseReflectionMapCube() {
+    char input[] = "newmtl new_material\n"
+                   "refl -type cube_top ../skybox/up.png\n"
+                   "refl -type cube_bottom ../skybox/dn.png\n"
+                   "refl -type cube_front ../skybox/ft.png\n"
+                   "refl -type cube_back ../skybox/bk.png\n"
+                   "refl -type cube_left ../skybox/lf.png\n"
+                   "refl -type cube_right ../skybox/rt.png\n";
+    struct WavefrontMTL mtl;
+    int result = parseWavefrontMTLFromString(&mtl, input);
+    assertIntegersEqual(result, STATUS_OK);
+    assertIntegersEqual(mtl.materialCount, 1);
+    assertStringsEqual(mtl.materials[0].reflectionMapCubeTop.file, "../skybox/up.png");
+    assertStringsEqual(mtl.materials[0].reflectionMapCubeBottom.file, "../skybox/dn.png");
+    assertStringsEqual(mtl.materials[0].reflectionMapCubeLeft.file, "../skybox/lf.png");
+    assertStringsEqual(mtl.materials[0].reflectionMapCubeRight.file, "../skybox/rt.png");
+    assertStringsEqual(mtl.materials[0].reflectionMapCubeFront.file, "../skybox/ft.png");
+    assertStringsEqual(mtl.materials[0].reflectionMapCubeBack.file, "../skybox/bk.png");
+
+}
+
 void testParseBlenderWavefrontMaterial() {
     char input[] = "# Blender MTL File: 'test.xyz'\n"
                    "# Material Count: 1 \n"
@@ -438,6 +470,9 @@ void wavefrontMaterialParserTest() {
     testParseIlluminationIgnoresGarbage();
 
     testParseSpecularExponent();
+
+    testParseReflectionMapSphere();
+    testParseReflectionMapCube();
 
     testParseBlenderWavefrontMaterial();
     testParseGuruWavefrontMaterial();

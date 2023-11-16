@@ -34,9 +34,3 @@ cygwin packages:
 
 ### Documentation
 `> make docs`
-
-## Known Issues
-- Alloc failures are not handled.
-- Unit tests do not cover alloc failures.
-- Only basic material properties are supported.
-- Only importing is supported.

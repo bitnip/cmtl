@@ -74,7 +74,17 @@ static int parseFloat(void* output, const char* input) {
 
 static int parseMap(void* output, const char* input) {
     struct WavefrontMap* map = output;
-    map->file = strCopy(input);
+
+    const char *thisToken = input,* nextDelim = NULL, *nextToken = NULL;
+    while (tokenize(&thisToken, &nextDelim, &nextToken, ASCII_H_DELIMITERS)) {
+        if(strStartsWith(thisToken, "-")) {
+            tokenize(&thisToken, &nextDelim, &nextToken, ASCII_H_DELIMITERS);
+        } else {
+            break;
+        }
+    }
+
+    map->file = strCopy(thisToken);
     return STATUS_OK;
 }
 
@@ -99,7 +109,7 @@ int parseWavefrontMTLFromString(struct WavefrontMTL* mtl, const char* input) {
         tokenize(&thisToken, &nextDelim, &nextToken, ASCII_H_DELIMITERS);
 
         struct Parser {
-            char name[8];
+            char name[22];
             int (*fn)(void* color, const char* input);
             void* result;
         };
@@ -114,12 +124,19 @@ int parseWavefrontMTLFromString(struct WavefrontMTL* mtl, const char* input) {
             {"Ni", parseFloat, (void*)&m->opticalDensity},
             {"d", parseFloat, (void*)&m->dissolve},
             {"map_Kd", parseMap, (void*)&m->diffuseMap},
-            {"map_Kn", parseMap, (void*)&m->normalMap}
+            {"map_Kn", parseMap, (void*)&m->normalMap},
+            {"refl -type sphere", parseMap, (void*)&m->reflectionMapSphere},
+            {"refl -type cube_top", parseMap, (void*)&m->reflectionMapCubeTop},
+            {"refl -type cube_bottom", parseMap, (void*)&m->reflectionMapCubeBottom},
+            {"refl -type cube_front", parseMap, (void*)&m->reflectionMapCubeFront},
+            {"refl -type cube_back", parseMap, (void*)&m->reflectionMapCubeBack},
+            {"refl -type cube_left", parseMap, (void*)&m->reflectionMapCubeLeft},
+            {"refl -type cube_right", parseMap, (void*)&m->reflectionMapCubeRight}
         };
         if(!nextToken) continue;
         int result = STATUS_OK;
         for(int i = 0; i < sizeof(parsers)/sizeof(struct Parser); i++) {
-            if((strStartsWith(thisToken, parsers[i].name) == nextDelim)) {
+            if((strStartsWith(thisToken, parsers[i].name) >= nextDelim)) {
                 const char* temp = nextToken ? strAfterWhitespace(nextToken) : NULL;
                 result = parsers[i].fn ? parsers[i].fn(parsers[i].result, temp) : STATUS_OK;
                 break;
